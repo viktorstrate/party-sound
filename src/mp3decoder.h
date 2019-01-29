@@ -8,4 +8,4 @@
 #include "mad.h"
 #include "Speaker.h"
 
-std::list<sChunk> decodeMP3File(unsigned char const* start, unsigned long length);
+void decodeMP3File(unsigned char const* start, unsigned long length, void (*onChunk)(sChunk&));

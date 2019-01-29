@@ -6,6 +6,7 @@
 
 #include <unistd.h>
 #include <iostream>
+#include <thread>
 
 struct sBuffer {
     unsigned char* start;
@@ -14,7 +15,8 @@ struct sBuffer {
 
 struct user_data {
     sBuffer input;
-    std::list<sChunk>* output;
+//    std::list<sChunk>* output;
+    void (*decodeCallback)(sChunk&);
 };
 
 // Read everything at once
@@ -78,7 +80,8 @@ static mad_flow output(void* data, struct mad_header const* header, struct mad_p
     left_ch = pcm->samples[0];
     right_ch = pcm->samples[1];
 
-    std::cout << "Decoding chunk, length: " << nsamples << " sample rate: " << pcm->samplerate << std::endl;
+//    std::cout << "Decoding chunk, length: " << nsamples << " sample rate: " << pcm->samplerate << std::endl;
+    std::cout << ".";
 
     sChunk chunk{};
     unsigned int offset = 0;
@@ -88,12 +91,15 @@ static mad_flow output(void* data, struct mad_header const* header, struct mad_p
         chunk.data[offset++] = *right_ch++;
     }
 
-    userData->output->push_back(chunk);
+//    userData->output->push_back(chunk);
+    userData->decodeCallback(chunk);
+
+    usleep(1000*10);
 
     return MAD_FLOW_CONTINUE;
 }
 
-std::list<sChunk> decodeMP3File(unsigned char const* start, unsigned long length) {
+void decodeMP3File(unsigned char const* start, unsigned long length, void (*onChunk)(sChunk&)) {
     mad_decoder decoder{};
     user_data userData{};
 
@@ -102,7 +108,9 @@ std::list<sChunk> decodeMP3File(unsigned char const* start, unsigned long length
     /* initialize our private message structure */
     userData.input.start = (unsigned char*)start;
     userData.input.length = length;
-    userData.output = &outputVal;
+    userData.decodeCallback = onChunk;
+
+
 
     /* configure input, output, and error functions */
     mad_decoder_init(&decoder, &userData,
@@ -110,11 +118,9 @@ std::list<sChunk> decodeMP3File(unsigned char const* start, unsigned long length
                      error, 0 /* message */);
 
     /* start decoding */
-    int result = mad_decoder_run(&decoder, MAD_DECODER_MODE_SYNC);
+    mad_decoder_run(&decoder, MAD_DECODER_MODE_SYNC);
 
     /* release the decoder */
     mad_decoder_finish(&decoder);
 
-
-    return outputVal;
 }

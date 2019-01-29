@@ -2,13 +2,15 @@
 // Created by Viktor Hundahl Strate on 28/01/2019.
 //
 
-#include <iostream>
 #include "Speaker.h"
+
+#include <iostream>
+
 
 #define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 1152
 
-Speaker::Speaker(std::list<sChunk> &buffer) : m_Buffer(buffer) {
+Speaker::Speaker() {
     PaError err = Pa_Initialize();
     if (err != paNoError)
         std::cout << "PortAudio initialization error: " << Pa_GetErrorText(err) << std::endl;
@@ -35,21 +37,73 @@ Speaker::~Speaker() {
     }
 }
 
-bool Speaker::start() {
+void Speaker::start() {
 
+    std::cout << "Starting speaker in another thread" << std::endl;
+
+    m_StopRequested = false;
+    m_SoundThread = std::thread(&Speaker::streamSound, this);
+
+}
+
+void Speaker::stop() {
+    m_StopRequested = true;
+    m_SoundThread.join();
+}
+
+void Speaker::wait() {
+    m_SoundThread.join();
+}
+
+void Speaker::streamSound() {
     std::cout << "Starting sound" << std::endl;
 
     PaError err = Pa_StartStream(m_PaStream);
     if (err != paNoError) {
         std::cout << "PortAudio start stream error: " << Pa_GetErrorText(err) << std::endl;
-        return false;
+        return;
     }
 
-    /* -- Here's the loop where we pass data from input to output -- */
-    while (!m_Buffer.empty()) {
+    auto moveQueue = [this]{
+        while (!m_UpcomingChunks.empty()) {
+            m_QueuedChunks.push_back(m_UpcomingChunks.front());
+            m_UpcomingChunks.pop_front();
+        }
+    };
 
-        sChunk chunk = m_Buffer.front();
-        m_Buffer.pop_front();
+    std::unique_lock<std::mutex> upcomingLock(m_MutUpcomming, std::defer_lock);
+
+    while (!m_StopRequested) {
+
+        if (m_QueuedChunks.size() < 3) {
+            std::cout << "QueuedChunks is soon empty, trying to refill..." << std::endl;
+            if (upcomingLock.try_lock()) {
+
+                moveQueue();
+
+                upcomingLock.unlock();
+            }
+        }
+
+        if (m_QueuedChunks.empty()) {
+
+            std::cout << "No QueuedChunks left, waiting for new ones..." << std::endl;
+
+            // Wait until data has been added to upcomingChunks and lock
+            upcomingLock.lock();
+            m_Upcoming_changed.wait(upcomingLock, [this]{
+                return !m_UpcomingChunks.empty();
+            });
+
+            moveQueue();
+
+            std::cout << "New chunks loaded" << std::endl;
+
+            upcomingLock.unlock();
+        }
+
+        sChunk chunk = m_QueuedChunks.front();
+        m_QueuedChunks.pop_front();
 
         err = Pa_WriteStream(m_PaStream, chunk.data, FRAMES_PER_BUFFER);
 
@@ -59,16 +113,13 @@ bool Speaker::start() {
 
     }
 
-    return true;
 }
 
-bool Speaker::stop() {
-    PaError err = Pa_StopStream(m_PaStream);
+void Speaker::pushChunk(sChunk chunk) {
 
-    if (err != paNoError) {
-        std::cout << "PortAudio stop stream error: " << Pa_GetErrorText(err) << std::endl;
-        return false;
-    }
+    std::lock_guard lk(m_MutUpcomming);
 
-    return true;
+    m_UpcomingChunks.push_back(chunk);
+    m_Upcoming_changed.notify_one();
+
 }
