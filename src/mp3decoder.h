@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <vector>
+#include <list>
 #include "mad.h"
 #include "Speaker.h"
 
-sBuffer decodeMP3File(unsigned char const* start, unsigned long length);
+std::list<sChunk> decodeMP3File(unsigned char const* start, unsigned long length);

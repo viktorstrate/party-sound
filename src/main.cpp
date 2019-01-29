@@ -32,9 +32,9 @@ int main(int argc, char* argv[]) {
         music_file.close();
         std::cout << "File size: " << size << " bytes" << std::endl;
 
-        sBuffer buffer = decodeMP3File(memblock, static_cast<unsigned long>(size));
+        std::list<sChunk> chunks = decodeMP3File(memblock, static_cast<unsigned long>(size));
 
-        Speaker speaker(buffer);
+        Speaker speaker(chunks);
 
         speaker.start();
 

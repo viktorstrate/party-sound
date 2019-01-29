@@ -8,7 +8,7 @@
 #define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 1152
 
-Speaker::Speaker(sBuffer buffer) : m_Buffer(buffer) {
+Speaker::Speaker(std::list<sChunk> &buffer) : m_Buffer(buffer) {
     PaError err = Pa_Initialize();
     if (err != paNoError)
         std::cout << "PortAudio initialization error: " << Pa_GetErrorText(err) << std::endl;
@@ -46,14 +46,12 @@ bool Speaker::start() {
     }
 
     /* -- Here's the loop where we pass data from input to output -- */
-    for (int i = 0;; i++) {
+    while (!m_Buffer.empty()) {
 
-        auto playhead = m_Buffer.next(FRAMES_PER_BUFFER*2);
-        if (playhead == nullptr) {
-            break;
-        }
+        sChunk chunk = m_Buffer.front();
+        m_Buffer.pop_front();
 
-        err = Pa_WriteStream(m_PaStream, playhead, FRAMES_PER_BUFFER);
+        err = Pa_WriteStream(m_PaStream, chunk.data, FRAMES_PER_BUFFER);
 
         if (err != paNoError) {
             std::cout << "PortAudio error: " << Pa_GetErrorText(err) << std::endl;

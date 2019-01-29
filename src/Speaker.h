@@ -5,43 +5,29 @@
 #pragma once
 
 #include <portaudio.h>
+#include <list>
 
-struct sBuffer {
-    const int* start;
-    unsigned long length;
-
-private:
-    unsigned long cursor;
-
-public:
-    const int* next(unsigned int step = 1) {
-
-        if (cursor >= length - 1) {
-            return nullptr;
-        }
-
-        cursor += step;
-        return start + cursor;
-    }
+struct sChunk {
+    int data[1152*2];
 };
 
 class Speaker {
 private:
-    sBuffer m_Buffer;
+    std::list<sChunk> m_Buffer;
     PaStream* m_PaStream;
 
 public:
-    Speaker(sBuffer buffer);
+    Speaker(std::list<sChunk> &buffer);
     ~Speaker();
 
     bool start();
     bool stop();
 
 private:
-    static int paCallback(const void* inputBuffer, void* outputBuffer,
-                              unsigned long framesPerBuffer,
-                              const PaStreamCallbackTimeInfo* timeInfo,
-                              PaStreamCallbackFlags statusFlags,
-                              void* userData);
+//    static int paCallback(const void* inputBuffer, void* outputBuffer,
+//                              unsigned long framesPerBuffer,
+//                              const PaStreamCallbackTimeInfo* timeInfo,
+//                              PaStreamCallbackFlags statusFlags,
+//                              void* userData);
 };
 

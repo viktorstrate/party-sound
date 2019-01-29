@@ -7,15 +7,22 @@
 #include <unistd.h>
 #include <iostream>
 
+struct sBuffer {
+    unsigned char* start;
+    unsigned long length;
+};
+
 struct user_data {
-    sBuffer buffer;
-    std::vector<int>* output;
+    sBuffer input;
+    std::list<sChunk>* output;
 };
 
 // Read everything at once
 static mad_flow input(void* data,
                       struct mad_stream* stream) {
-    auto* buffer = (struct sBuffer*)data;
+    auto* userData = (struct user_data*)data;
+
+    auto* buffer = &userData->input;
 
     if (buffer->length == 0)
         return MAD_FLOW_STOP;
@@ -47,7 +54,7 @@ static mad_flow error(void* data,
                       struct mad_frame* frame) {
 
     auto* userData = (struct user_data*)data;
-    auto* buffer = &userData->buffer;
+    auto* buffer = &userData->input;
 
     std::cerr << "Decoding error: " << stream->error << " at byte offset " << (stream->this_frame - (unsigned char*)buffer->start)
               << std::endl;
@@ -73,46 +80,28 @@ static mad_flow output(void* data, struct mad_header const* header, struct mad_p
 
     std::cout << "Decoding chunk, length: " << nsamples << " sample rate: " << pcm->samplerate << std::endl;
 
+    sChunk chunk{};
+    unsigned int offset = 0;
+
     while (nsamples--) {
-        signed int sample;
-
-        /* output sample(s) in 16-bit signed little-endian PCM */
-
-//        sample = scale(*left_ch++);
-        sample = *left_ch++;
-        /*putchar((sample >> 0) & 0xff);
-        putchar((sample >> 8) & 0xff);*/
-
-//        userData->output->push_back((sample >> 0) & 0xff);
-//        userData->output->push_back((sample >> 8) & 0xff);
-
-        userData->output->push_back(sample);
-
-        if (nchannels == 2) {
-//            sample = scale(*right_ch++);
-            sample = *right_ch++;
-            /*putchar((sample >> 0) & 0xff);
-            putchar((sample >> 8) & 0xff);*/
-
-//            userData->output->push_back((sample >> 0) & 0xff);
-//            userData->output->push_back((sample >> 8) & 0xff);
-
-            userData->output->push_back(sample);
-        }
+        chunk.data[offset++] = *left_ch++;
+        chunk.data[offset++] = *right_ch++;
     }
+
+    userData->output->push_back(chunk);
 
     return MAD_FLOW_CONTINUE;
 }
 
-sBuffer decodeMP3File(unsigned char const* start, unsigned long length) {
+std::list<sChunk> decodeMP3File(unsigned char const* start, unsigned long length) {
     mad_decoder decoder{};
     user_data userData{};
 
-    auto outputVal = std::vector<int>();
+    auto outputVal = std::list<sChunk>();
 
     /* initialize our private message structure */
-    userData.buffer.start = (int*)start;
-    userData.buffer.length = length;
+    userData.input.start = (unsigned char*)start;
+    userData.input.length = length;
     userData.output = &outputVal;
 
     /* configure input, output, and error functions */
@@ -126,10 +115,6 @@ sBuffer decodeMP3File(unsigned char const* start, unsigned long length) {
     /* release the decoder */
     mad_decoder_finish(&decoder);
 
-    sBuffer outBuffer{};
 
-    outBuffer.start = (const int*) &outputVal[0];
-    outBuffer.length = outputVal.size();
-
-    return outBuffer;
+    return outputVal;
 }
