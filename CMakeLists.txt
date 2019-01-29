@@ -8,8 +8,6 @@ find_package(mad REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
-link_libraries(${PORTAUDIO_LIBRARIES})
-
 add_executable(party_sound src/main.cpp src/Speaker.cpp src/Speaker.h src/mp3decoder.cpp)
 
 include_directories(${PORTAUDIO_INCLUDE_DIRS})
