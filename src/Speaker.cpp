@@ -6,6 +6,7 @@
 #include "Speaker.h"
 
 #define SAMPLE_RATE 44100
+#define FRAMES_PER_BUFFER 1152
 
 Speaker::Speaker(sBuffer buffer) : m_Buffer(buffer) {
     PaError err = Pa_Initialize();
@@ -18,16 +19,11 @@ Speaker::Speaker(sBuffer buffer) : m_Buffer(buffer) {
                                2,          /* stereo output */
                                paInt32,
                                SAMPLE_RATE,
-                               1152,        /* frames per buffer, i.e. the number
-                                                   of sample frames that PortAudio will
-                                                   request from the callback. Many apps
-                                                   may want to use
-                                                   paFramesPerBufferUnspecified, which
-                                                   tells PortAudio to pick the best,
-                                                   possibly changing, buffer size.*/
-                               paCallback, /* this is your callback function */
-                               &m_Buffer); /*This is a pointer that will be passed to
-                                                   your callback*/
+                               FRAMES_PER_BUFFER,        /* frames per buffer, i.e. the number of sample frames that PortAudio will request */
+                               nullptr,
+                               nullptr);
+
+
     if (err != paNoError)
         std::cout << "PortAudio open stream error: " << Pa_GetErrorText(err) << std::endl;
 }
@@ -49,7 +45,21 @@ bool Speaker::start() {
         return false;
     }
 
-    Pa_Sleep(100000);
+    /* -- Here's the loop where we pass data from input to output -- */
+    for (int i = 0;; i++) {
+
+        auto playhead = m_Buffer.next(FRAMES_PER_BUFFER*2);
+        if (playhead == nullptr) {
+            break;
+        }
+
+        err = Pa_WriteStream(m_PaStream, playhead, FRAMES_PER_BUFFER);
+
+        if (err != paNoError) {
+            std::cout << "PortAudio error: " << Pa_GetErrorText(err) << std::endl;
+        }
+
+    }
 
     return true;
 }
@@ -63,31 +73,4 @@ bool Speaker::stop() {
     }
 
     return true;
-}
-
-int Speaker::paCallback(const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer,
-                        const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData) {
-
-/* Cast data passed through stream to our structure. */
-    auto* buffer = (sBuffer*)userData;
-
-    auto* out = (int*) outputBuffer;
-    unsigned int i;
-    (void) inputBuffer; /* Prevent unused variable warning. */
-
-    for (i = 0; i < framesPerBuffer; i++) {
-
-        int* left;
-        int* right;
-
-        if ((left = (int*) buffer->next()) == nullptr || (right = (int*) buffer->next()) == nullptr) {
-            return PaStreamCallbackResult::paComplete;
-        }
-
-        *out++ = *left; // left
-        *out++ = *right; // right
-
-    }
-
-    return 0;
 }

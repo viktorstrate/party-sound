@@ -14,13 +14,13 @@ private:
     unsigned long cursor;
 
 public:
-    const int* next() {
+    const int* next(unsigned int step = 1) {
 
         if (cursor >= length - 1) {
             return nullptr;
         }
 
-        cursor++;
+        cursor += step;
         return start + cursor;
     }
 };
