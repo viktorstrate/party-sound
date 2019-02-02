@@ -8,4 +8,4 @@
 #include "mad.h"
 #include "Speaker.h"
 
-void decodeMP3File(unsigned char const* start, unsigned long length, void (*onChunk)(sChunk&));
+void decodeMP3File(std::string& filePath, void (*onChunk)(SoundChunk&));

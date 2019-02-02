@@ -10,14 +10,15 @@
 #include <condition_variable>
 #include <thread>
 
-struct sChunk {
-    int data[1152*2];
-};
+#include "SoundChunk.h"
+
+#define SAMPLE_RATE 44100
+#define FRAMES_PER_BUFFER 1152
 
 class Speaker {
 private:
-    std::list<sChunk> m_UpcomingChunks;
-    std::list<sChunk> m_QueuedChunks;
+    std::list<SoundChunk> m_UpcomingChunks;
+    std::list<SoundChunk> m_QueuedChunks;
 
     std::mutex m_MutUpcomming;
     std::condition_variable m_Upcoming_changed;
@@ -35,9 +36,9 @@ public:
 
     void start();
     void stop();
-    void wait();
+    void join();
 
-    void pushChunk(sChunk chunk);
+    void pushChunk(SoundChunk chunk);
 
 private:
     void streamSound();

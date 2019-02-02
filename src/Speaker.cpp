@@ -5,10 +5,7 @@
 #include "Speaker.h"
 
 #include <iostream>
-
-
-#define SAMPLE_RATE 44100
-#define FRAMES_PER_BUFFER 1152
+#include <unistd.h>
 
 Speaker::Speaker() {
     PaError err = Pa_Initialize();
@@ -51,7 +48,7 @@ void Speaker::stop() {
     m_SoundThread.join();
 }
 
-void Speaker::wait() {
+void Speaker::join() {
     m_SoundThread.join();
 }
 
@@ -102,8 +99,40 @@ void Speaker::streamSound() {
             upcomingLock.unlock();
         }
 
-        sChunk chunk = m_QueuedChunks.front();
+        SoundChunk chunk = m_QueuedChunks.front();
         m_QueuedChunks.pop_front();
+
+        long long timeNow = Time::getNowTimestamp();
+        long long timeToWait = chunk.timestamp - timeNow;
+
+        std::cout << "Time to wait: " << timeToWait << " block timestamp: " << chunk.timestamp << std::endl;
+
+        // Discard old but not played chunks
+        if (timeToWait < -10) {
+
+            int count = 0;
+
+            while (chunk.timestamp - timeNow < 0 && !m_QueuedChunks.empty()) {
+                chunk = m_QueuedChunks.front();
+                m_QueuedChunks.pop_front();
+                count++;
+            }
+
+            if (count > 0)
+                std::cout << "Discarded " << count << " old chunks" << std::endl;
+
+            if (m_QueuedChunks.empty()) {
+                std::cout << "Queue empty after discarding, resetting loop" << std::endl;
+                usleep(1000*50);
+                continue;
+            }
+        }
+
+        // Wait to sync chunk timestamp with playback
+        if (timeToWait > 0) {
+            std::cout << "Waiting " << timeToWait << "ms before playing next chunk" << std::endl;
+            usleep(1000 * (unsigned int)timeToWait);
+        }
 
         err = Pa_WriteStream(m_PaStream, chunk.data, FRAMES_PER_BUFFER);
 
@@ -115,7 +144,7 @@ void Speaker::streamSound() {
 
 }
 
-void Speaker::pushChunk(sChunk chunk) {
+void Speaker::pushChunk(SoundChunk chunk) {
 
     std::lock_guard lk(m_MutUpcomming);
 

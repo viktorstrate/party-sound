@@ -11,9 +11,10 @@ The following dependencies are required
 
 - Portaudio
 - MAD (MPEG Audio Decoder)
+- ENET
 
 They can be installed using `brew` or `apt`
 
-    $ brew install portaudio mad
+    $ brew install portaudio mad enet
 
-    $ apt install portaudio19-dev libmad0-dev
+    $ apt install portaudio19-dev libmad0-dev libenet-dev

@@ -4,6 +4,8 @@
 
 #include "mp3decoder.h"
 
+#include <fstream>
+#include <string>
 #include <unistd.h>
 #include <iostream>
 #include <thread>
@@ -15,13 +17,14 @@ struct sBuffer {
 
 struct user_data {
     sBuffer input;
-//    std::list<sChunk>* output;
-    void (*decodeCallback)(sChunk&);
+    long long nextTimestamp;
+    void (*decodeCallback)(SoundChunk&);
 };
 
 // Read everything at once
 static mad_flow input(void* data,
                       struct mad_stream* stream) {
+
     auto* userData = (struct user_data*)data;
 
     auto* buffer = &userData->input;
@@ -29,7 +32,7 @@ static mad_flow input(void* data,
     if (buffer->length == 0)
         return MAD_FLOW_STOP;
 
-    mad_stream_buffer(stream, (unsigned char*)buffer->start, buffer->length);
+    mad_stream_buffer(stream, buffer->start, buffer->length);
 
     buffer->length = 0;
 
@@ -83,9 +86,14 @@ static mad_flow output(void* data, struct mad_header const* header, struct mad_p
 //    std::cout << "Decoding chunk, length: " << nsamples << " sample rate: " << pcm->samplerate << std::endl;
     std::cout << ".";
 
-    sChunk chunk{};
-    unsigned int offset = 0;
+    SoundChunk chunk;
+    chunk.timestamp = userData->nextTimestamp;
 
+    int increase = CHUNK_SIZE * 1000 / SAMPLE_RATE;
+
+    userData->nextTimestamp += increase;
+
+    unsigned int offset = 0;
     while (nsamples--) {
         chunk.data[offset++] = *left_ch++;
         chunk.data[offset++] = *right_ch++;
@@ -94,22 +102,47 @@ static mad_flow output(void* data, struct mad_header const* header, struct mad_p
 //    userData->output->push_back(chunk);
     userData->decodeCallback(chunk);
 
-    usleep(1000*10);
+    //usleep(1000*20);
 
     return MAD_FLOW_CONTINUE;
 }
 
-void decodeMP3File(unsigned char const* start, unsigned long length, void (*onChunk)(sChunk&)) {
+void decodeMP3File(std::string& filePath, void (*onChunk)(SoundChunk&)) {
+    std::cout << "Reading " << filePath << std::endl;
+
+    std::ifstream music_file(filePath, std::ios::in|std::ios::binary|std::ios::ate);
+
+    unsigned char* memblock;
+    std::streampos size;
+
+    if (music_file.is_open()) {
+
+
+        size = music_file.tellg();
+        memblock = new unsigned char[size];
+        music_file.seekg(0, std::ios::beg);
+        music_file.read((char*)memblock, size);
+        music_file.close();
+        std::cout << "File size: " << size << " bytes" << std::endl;
+
+
+
+    } else {
+        std::cout << "Unable to open file";
+        return;
+    }
+
+    // Start decoding
     mad_decoder decoder{};
     user_data userData{};
 
-    auto outputVal = std::list<sChunk>();
+    auto outputVal = std::list<SoundChunk>();
 
     /* initialize our private message structure */
-    userData.input.start = (unsigned char*)start;
-    userData.input.length = length;
+    userData.input.start = memblock;
+    userData.input.length = static_cast<unsigned long>(size);
     userData.decodeCallback = onChunk;
-
+    userData.nextTimestamp = Time::getNowTimestamp() - 10000;
 
 
     /* configure input, output, and error functions */
@@ -122,5 +155,7 @@ void decodeMP3File(unsigned char const* start, unsigned long length, void (*onCh
 
     /* release the decoder */
     mad_decoder_finish(&decoder);
+
+    delete[] memblock;
 
 }
