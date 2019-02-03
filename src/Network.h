@@ -10,6 +10,7 @@
 #include <mutex>
 #include <thread>
 #include <atomic>
+#include "Speaker.h"
 
 namespace Network {
 
@@ -24,6 +25,7 @@ namespace Network {
         ~Server();
         void start(int port);
         void stop();
+        std::mutex* getServer(ENetHost& server);
 
     private:
         void eventThread();
@@ -35,6 +37,8 @@ namespace Network {
         std::mutex m_ClientLock;
         std::thread m_ClientThread;
         std::atomic<bool> m_StopRequested;
+
+        Speaker m_Speaker;
 
 
     public:

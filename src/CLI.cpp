@@ -6,6 +6,8 @@
 
 #include <iostream>
 #include "Network.h"
+#include "SoundChunk.h"
+#include "mp3decoder.h"
 
 namespace CLI {
 
@@ -35,6 +37,19 @@ namespace CLI {
         } while(choise != 0);
     }
 
+    Network::Server* server;
+
+    void broadcastChunk(SoundChunk& chunk) {
+        ENetHost serverHost;
+        std::mutex* mu = server->getServer(serverHost);
+
+        ENetPacket* packet = enet_packet_create(&chunk, sizeof(chunk), 0);
+
+        enet_host_broadcast(&serverHost, 0, packet);
+
+        mu->unlock();
+    }
+
     void startServer() {
         std::cout << "Please select a port to listen on:" << std::endl;
 
@@ -42,17 +57,32 @@ namespace CLI {
         std::cin >> port;
 
 
-        auto server = Network::Server();
-        server.start(port);
+        server = new Network::Server();
+        server->start(port);
 
-        std::cout << "Press enter to stop server" << std::endl;
+        while(true) {
 
-        {
-            int empty;
-            std::cin >> empty;
+            std::cout << "Press 0 to stop server, 1 to play sound" << std::endl;
+
+            {
+                int choise;
+                std::cin >> choise;
+
+                if (choise == 0) {
+                    server->stop();
+                    delete server;
+                    return;
+                }
+            }
+
+            std::cout << "Please enter a filepath to an mp3 file" << std::endl;
+
+            std::string filePath;
+            std::cin >> filePath;
+
+            decodeMP3File(filePath, broadcastChunk);
+
         }
-
-        server.stop();
 
     }
 

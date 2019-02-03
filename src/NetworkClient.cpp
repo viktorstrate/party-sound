@@ -3,6 +3,7 @@
 //
 
 #include "Network.h"
+#include "SoundChunk.h"
 
 namespace Network {
 
@@ -36,10 +37,14 @@ namespace Network {
             return;
         }
 
+        m_Speaker.start();
+
         m_ClientThread = std::thread(&Client::eventThread, this);
     }
 
     void Client::stop() {
+        m_Speaker.stop();
+
         m_StopRequested = true;
         m_ClientThread.join();
     }
@@ -71,10 +76,15 @@ namespace Network {
                                   << event.peer->address.port << std::endl;
                         break;
 
-                    case ENET_EVENT_TYPE_RECEIVE:
-                        std::cout << "Client: Packet received" << std::endl;
+                    case ENET_EVENT_TYPE_RECEIVE: {
+                        std::cout << "Client: Packet received of size " << event.packet->dataLength << std::endl;
+
+                        SoundChunk chunk = *(SoundChunk*)event.packet->data;
+                        m_Speaker.pushChunk(chunk);
+
                         enet_packet_destroy(event.packet);
                         break;
+                    }
 
                     case ENET_EVENT_TYPE_DISCONNECT:
                         std::cout << "Client: Client disconnected" << std::endl;

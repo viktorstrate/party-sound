@@ -102,6 +102,16 @@ static mad_flow output(void* data, struct mad_header const* header, struct mad_p
 //    userData->output->push_back(chunk);
     userData->decodeCallback(chunk);
 
+    long long int difference = userData->nextTimestamp - Time::getNowTimestamp() - 2000;
+
+    std::cout << "Difference " << difference << std::endl;
+
+    if (difference > 0) {
+        std::cout << "Waiting " << difference << " mills, before decoding next chunk" << std::endl;
+        usleep(1000*difference);
+    }
+
+
     //usleep(1000*20);
 
     return MAD_FLOW_CONTINUE;
@@ -142,7 +152,7 @@ void decodeMP3File(std::string& filePath, void (*onChunk)(SoundChunk&)) {
     userData.input.start = memblock;
     userData.input.length = static_cast<unsigned long>(size);
     userData.decodeCallback = onChunk;
-    userData.nextTimestamp = Time::getNowTimestamp() - 10000;
+    userData.nextTimestamp = Time::getNowTimestamp();
 
 
     /* configure input, output, and error functions */
