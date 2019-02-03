@@ -32,6 +32,9 @@ namespace Network {
     class Client {
         ENetHost* m_Client;
         ENetPeer* m_Peer;
+        std::mutex m_ClientLock;
+        std::thread m_ClientThread;
+        std::atomic<bool> m_StopRequested;
 
 
     public:
@@ -41,6 +44,10 @@ namespace Network {
 
     public:
         void connect(const ENetAddress &host);
+        void stop();
+
+    private:
+        void eventThread();
     };
 }
 

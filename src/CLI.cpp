@@ -57,18 +57,38 @@ namespace CLI {
     }
 
     void startClient() {
-        std::cout << "Please select the port to connect to:" << std::endl;
+        std::cout << "Please select the host to connect to:" << std::endl;
 
-        int port;
-        std::cin >> port;
+        std::string host;
+        std::cin >> host;
+
+
+        std::size_t separator = host.find(':');
 
         ENetAddress serverAddr;
 
-        serverAddr.host = ENET_HOST_ANY;
-        serverAddr.port = static_cast<enet_uint16>(port);
+        if (separator == std::string::npos) {
+            enet_address_set_host(&serverAddr, host.c_str());
+        } else {
+
+            int port = stoi(host.substr(separator+1));
+            host = host.substr(0, separator);
+
+            enet_address_set_host(&serverAddr, host.c_str());
+            serverAddr.port = static_cast<enet_uint16>(port);
+        }
 
         auto client = Network::Client();
         client.connect(serverAddr);
+
+        std::cout << "Press enter to stop client" << std::endl;
+
+        {
+            int empty;
+            std::cin >> empty;
+        }
+
+        client.stop();
     }
 
     void start() {
