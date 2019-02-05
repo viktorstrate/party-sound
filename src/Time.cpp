@@ -6,7 +6,7 @@
 
 #include <chrono>
 
-#ifdef __unix__
+#if defined __APPLE__ || defined __linux__
 #include <unistd.h>
 #else
 #include <Windows.h>
@@ -27,7 +27,7 @@ namespace Time {
     }
 
 	void sleep(unsigned long ms) {
-		#ifdef __unix__
+		#if defined __APPLE__ || defined __linux__
 		usleep(1000 * ms);
 		#else
 		Sleep(ms);

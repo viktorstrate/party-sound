@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(party_sound)
 
-SET(USE_PREBUILT TRUE)
+SET(USE_PREBUILT FALSE CACHE BOOL "Whether or not the bundled prebuilt libraries should be used even if external ones were found")
 set(PREBUILT_PATH ${CMAKE_SOURCE_DIR}/libs)
 
 if(WIN32)
