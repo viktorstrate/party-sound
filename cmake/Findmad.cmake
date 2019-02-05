@@ -30,7 +30,7 @@ if(WIN32)
 
 else(WIN32)
     find_path(MAD_INCLUDE_DIR mad.h DOC "The directory where mad.h resides")
-    find_library(MAD_LIBRARY NAMES mad DOC "The libmad library")
+    find_library(MAD_LIBRARY NAMES libmad.a DOC "The libmad library")
 
 endif(WIN32)
 

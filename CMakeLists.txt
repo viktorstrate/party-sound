@@ -5,7 +5,8 @@ SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
 find_package(portaudio REQUIRED)
 find_package(mad REQUIRED)
-find_package(enet REQUIRED)
+
+add_subdirectory(libs/enet-1.3.14)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -31,4 +32,4 @@ include_directories(${MAD_INCLUDE_DIRS})
 target_link_libraries(party_sound ${MAD_LIBRARIES})
 
 include_directories(${ENet_INCLUDE_DIRS})
-target_link_libraries(party_sound ${ENet_LIBRARIES})
+target_link_libraries(party_sound enet)
