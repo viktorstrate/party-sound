@@ -12,5 +12,7 @@ namespace Time {
 
     std::string formatTimestamp(long long &timestamp);
 
+	void sleep(unsigned long ms);
+
 };
 

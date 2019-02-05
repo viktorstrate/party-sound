@@ -5,7 +5,8 @@
 #include "Speaker.h"
 
 #include <iostream>
-#include <unistd.h>
+
+#include "Time.h"
 
 Speaker::Speaker() {
     PaError err = Pa_Initialize();
@@ -123,7 +124,7 @@ void Speaker::streamSound() {
 
             if (m_QueuedChunks.empty()) {
                 std::cout << "Queue empty after discarding, resetting loop" << std::endl;
-                usleep(1000*50);
+				Time::sleep(50);
                 continue;
             }
         }
@@ -131,7 +132,7 @@ void Speaker::streamSound() {
         // Wait to sync chunk timestamp with playback
         if (timeToWait > 0) {
             std::cout << "Waiting " << timeToWait << "ms before playing next chunk" << std::endl;
-            usleep(1000 * (unsigned int)timeToWait);
+			Time::sleep(timeToWait);
         }
 
         err = Pa_WriteStream(m_PaStream, chunk.data, FRAMES_PER_BUFFER);

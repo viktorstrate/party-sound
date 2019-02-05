@@ -6,9 +6,10 @@
 
 #include <fstream>
 #include <string>
-#include <unistd.h>
 #include <iostream>
 #include <thread>
+
+#include "Time.h"
 
 struct sBuffer {
     unsigned char* start;
@@ -108,11 +109,8 @@ static mad_flow output(void* data, struct mad_header const* header, struct mad_p
 
     if (difference > 0) {
         std::cout << "Waiting " << difference << " mills, before decoding next chunk" << std::endl;
-        usleep(1000*difference);
+		Time::sleep(difference);
     }
-
-
-    //usleep(1000*20);
 
     return MAD_FLOW_CONTINUE;
 }

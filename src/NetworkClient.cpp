@@ -96,7 +96,7 @@ namespace Network {
 
             m_ClientLock.unlock();
 
-            usleep(1000*10);
+			Time::sleep(10);
         }
 
         std::cout << "Stopping client..." << std::endl;
