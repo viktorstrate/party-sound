@@ -21,8 +21,8 @@
 # Once done this will define
 #
 # MAD_INCLUDE_DIRS - where to find mad.h, etc.
-# MAD_LIBRARIES - List of libraries when using libmad.
-# MAD_FOUND - True if libmad found.
+# MAD_LIBRARIES - List of libraries when using mad.
+# MAD_FOUND - True if mad found.
 
 if(WIN32)
     find_path(MAD_INCLUDE_DIR mad.h $ENV{PROGRAMFILES}/MAD/include DOC "The directory where mad.h resides")
