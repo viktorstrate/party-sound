@@ -63,3 +63,8 @@ target_link_libraries(party_sound ${MAD_LIBRARIES})
 
 include_directories(${PREBUILT_PATH}/enet/include)
 target_link_libraries(party_sound ${ENet_LIBRARIES})
+
+if (WIN32)
+	target_link_libraries(party_sound ws2_32.lib winmm.lib)
+	configure_file(${PREBUILT_PATH}/portaudio/portaudio_x86.dll ${CMAKE_BINARY_DIR}/ COPYONLY)
+endif()

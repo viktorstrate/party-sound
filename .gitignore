@@ -2,3 +2,7 @@ build
 cmake-build-debug
 cmake-build-release
 *.mp3
+
+# Windows visual studio
+.vs
+CMakeSettings.json
