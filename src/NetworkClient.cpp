@@ -77,7 +77,7 @@ namespace Network {
                         break;
 
                     case ENET_EVENT_TYPE_RECEIVE: {
-                        std::cout << "Client: Packet received of size " << event.packet->dataLength << std::endl;
+                        //std::cout << "Client: Packet received of size " << event.packet->dataLength << std::endl;
 
                         SoundChunk chunk = *(SoundChunk*)event.packet->data;
                         m_Speaker.pushChunk(chunk);

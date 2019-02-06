@@ -8,13 +8,6 @@
 #include "Network.h"
 #include "CLI.h"
 
-
-Speaker speaker;
-
-void handleChunk(SoundChunk& chunk) {
-    speaker.pushChunk(chunk);
-}
-
 int main(int argc, char* argv[]) {
     std::cout << "Party Sound" << std::endl;
 
