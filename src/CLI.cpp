@@ -111,12 +111,12 @@ namespace CLI {
         auto client = Network::Client();
         client.connect(serverAddr);
 
-        std::cout << "Press enter to stop client" << std::endl;
-
-        {
-            int empty;
-            std::cin >> empty;
-        }
+		std::string input;
+		do {
+			std::cout << "Write 'stop' to stop client" << std::endl;
+			std::cin >> input;
+		} while (input != "stop");
+		std::cout << "You wrote 'stop'" << std::endl;
 
         client.stop();
     }

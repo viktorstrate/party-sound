@@ -7,7 +7,7 @@
 
 namespace Network {
 
-    Client::Client() = default;
+	Client::Client() : m_StopRequested(false), m_Client(nullptr), m_ClientLock() {};
 
     Client::~Client() {
         enet_host_destroy(m_Client);
@@ -53,8 +53,6 @@ namespace Network {
         std::cout << "Client background thread" << std::endl;
         ENetEvent event;
 
-        m_ClientLock.lock();
-
         std::cout << "Client set up to: localhost:" << m_Peer->address.port << std::endl;
 
         if (enet_host_service(m_Client, &event, 5000) > 0 &&
@@ -67,6 +65,8 @@ namespace Network {
         }
 
         while (!m_StopRequested) {
+
+			std::lock_guard<std::mutex> lock(m_ClientLock);
 
             while (enet_host_service(m_Client, &event, 0) > 0) {
                 switch (event.type) {
@@ -93,8 +93,6 @@ namespace Network {
                         break;
                 }
             }
-
-            m_ClientLock.unlock();
 
 			Time::sleep(10);
         }

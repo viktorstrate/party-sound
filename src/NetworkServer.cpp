@@ -50,13 +50,14 @@ namespace Network {
         std::cout << "Server background thread" << std::endl;
         ENetEvent event;
 
-        m_ServerLock.lock();
-
         std::cout << "Server started in another thread: localhost:" << m_Server->address.port << std::endl;
 
         while (!m_StopRequested) {
 
             while (enet_host_service(m_Server, &event, 0) > 0) {
+				//m_ServerLock.lock();
+				std::lock_guard<std::mutex> lock(m_ServerLock);
+
                 switch (event.type) {
                     case ENET_EVENT_TYPE_CONNECT: {
                         std::cout << "Server: A new client connected from " << event.peer->address.host << ":"
@@ -82,7 +83,7 @@ namespace Network {
                 }
             }
 
-            m_ServerLock.unlock();
+            //m_ServerLock.unlock();
 
 			Time::sleep(10);
         }
